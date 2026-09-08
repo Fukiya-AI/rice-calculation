@@ -1,0 +1,39 @@
+# APIキー・パスワード（絶対にアップしない）
+.env
+.env.*
+secrets.toml
+*.secret
+*.key
+.streamlit/secrets.toml
+
+# 個人情報・業務データ（デフォルトで除外。サンプル等で明示的に含めたい場合のみ
+# 「!ファイル名」で個別に許可すること）
+*.xlsx
+*.xls
+*.csv
+*.numbers
+!サンプル*.xlsx
+!サンプル*.xls
+!サンプル*.csv
+
+# Python自動生成ファイル
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# OS・エディタの自動生成ファイル
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+
+# ログ・一時ファイル
+*.log
+*.tmp
+*.temp
