@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 
 from rice_calc import calculator as calc
+from rice_calc import excel_export
 from rice_calc import excel_parser as parser
 from rice_calc import settings_store as store
 
@@ -80,31 +81,63 @@ def page_calc():
         staff_row = edited_df[edited_df["クラス"] == "職員（事務所）"].iloc[0]
         staff_count = int(staff_row["教員数"])
 
+        meal_results = []
         rice_like_totals = []
 
         for meal in meal_types:
-            st.subheader(meal)
             rate_table = settings["rates"][meal]
             is_rice = meal in calc.RICE_MEAL_TYPES
             results, total_kg = calc.calc_meal(
                 classes, staff_count, rate_table, extra_kg=extra_kg if is_rice else 0.0
             )
-            result_df = pd.DataFrame(
-                [{"クラス": k, "配缶量(kg)": v} for k, v in results.items()]
-            )
-            st.dataframe(result_df, hide_index=True, use_container_width=True)
-            st.write(f"**合計: {total_kg} kg**")
-
+            raw_rice = water = None
             if is_rice:
                 raw_rice = calc.calc_raw_rice_kg(total_kg)
                 water = calc.calc_water_l(raw_rice, water_multiplier)
-                st.write(f"生米: **{raw_rice} kg** ／ 水: **{water} L**")
                 rice_like_totals.append(total_kg)
+            meal_results.append(
+                {
+                    "meal": meal,
+                    "results": results,
+                    "total": total_kg,
+                    "raw_rice": raw_rice,
+                    "water": water,
+                }
+            )
 
-        if rice_like_totals:
-            soup_water = calc.calc_soup_water_l(rice_like_totals)
+        soup_water = calc.calc_soup_water_l(rice_like_totals) if rice_like_totals else None
+
+        st.session_state["calc_output"] = {
+            "day_label": day_label,
+            "meal_results": meal_results,
+            "soup_water": soup_water,
+        }
+
+    output = st.session_state.get("calc_output")
+    if output:
+        for meal in output["meal_results"]:
+            st.subheader(meal["meal"])
+            result_df = pd.DataFrame(
+                [{"クラス": k, "配缶量(kg)": v} for k, v in meal["results"].items()]
+            )
+            st.dataframe(result_df, hide_index=True, use_container_width=True)
+            st.write(f"**合計: {meal['total']} kg**")
+            if meal["raw_rice"] is not None:
+                st.write(f"生米: **{meal['raw_rice']} kg** ／ 水: **{meal['water']} L**")
+
+        if output["soup_water"] is not None:
             st.subheader("味噌汁の水")
-            st.write(f"**{soup_water} L**")
+            st.write(f"**{output['soup_water']} L**")
+
+        xlsx_bytes = excel_export.build_print_workbook(
+            output["day_label"], output["meal_results"], output["soup_water"]
+        )
+        st.download_button(
+            "A4印刷用Excelをダウンロード（大きな文字）",
+            data=xlsx_bytes,
+            file_name=f"配缶量_{output['day_label']}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
 
 
 def page_settings():
