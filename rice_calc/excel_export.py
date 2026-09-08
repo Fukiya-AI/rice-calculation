@@ -51,16 +51,19 @@ def build_print_workbook(day_label: str, meal_results: list[dict], soup_water_l:
     row += 2
 
     for meal in meal_results:
-        ws.cell(row=row, column=1, value=meal["meal"]).font = SECTION_FONT
+        unit = meal.get("unit", "kg")
+        fmt = "0" if unit == "玉" else "0.0"
+
+        ws.cell(row=row, column=1, value=f"{meal['meal']}（{unit}）").font = SECTION_FONT
         ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=2)
         ws.row_dimensions[row].height = 36
         row += 1
 
-        for class_name, kg in meal["results"].items():
-            _write_row(ws, row, class_name, kg, LABEL_FONT, VALUE_FONT)
+        for class_name, value in meal["results"].items():
+            _write_row(ws, row, class_name, value, LABEL_FONT, VALUE_FONT, fmt=fmt)
             row += 1
 
-        _write_row(ws, row, "合計", meal["total"], TOTAL_FONT, TOTAL_FONT, height=34)
+        _write_row(ws, row, "合計", meal["total"], TOTAL_FONT, TOTAL_FONT, height=34, fmt=fmt)
         row += 1
 
         if meal.get("raw_rice") is not None:

@@ -66,7 +66,7 @@ def page_calc():
             "水の倍率（生米kg × 倍率 = 水L）",
             min_value=0.0,
             value=float(settings["water_multiplier_default"]),
-            step=0.1,
+            step=0.05,
         )
 
     if st.button("計算する", type="primary"):
@@ -87,8 +87,15 @@ def page_calc():
         for meal in meal_types:
             rate_table = settings["rates"][meal]
             is_rice = meal in calc.RICE_MEAL_TYPES
+            is_noodle = meal in calc.NOODLE_MEAL_TYPES
+            unit, unit_g, ndigits = ("玉", calc.NOODLE_BALL_G, 0) if is_noodle else ("kg", 1000.0, 1)
             results, total_kg = calc.calc_meal(
-                classes, staff_count, rate_table, extra_kg=extra_kg if is_rice else 0.0
+                classes,
+                staff_count,
+                rate_table,
+                extra_kg=extra_kg if is_rice else 0.0,
+                unit_g=unit_g,
+                ndigits=ndigits,
             )
             raw_rice = water = None
             if is_rice:
@@ -102,6 +109,7 @@ def page_calc():
                     "total": total_kg,
                     "raw_rice": raw_rice,
                     "water": water,
+                    "unit": unit,
                 }
             )
 
@@ -118,10 +126,10 @@ def page_calc():
         for meal in output["meal_results"]:
             st.subheader(meal["meal"])
             result_df = pd.DataFrame(
-                [{"クラス": k, "配缶量(kg)": v} for k, v in meal["results"].items()]
+                [{"クラス": k, f"配缶量({meal['unit']})": v} for k, v in meal["results"].items()]
             )
             st.dataframe(result_df, hide_index=True, use_container_width=True)
-            st.write(f"**合計: {meal['total']} kg**")
+            st.write(f"**合計: {meal['total']} {meal['unit']}**")
             if meal["raw_rice"] is not None:
                 st.write(f"生米: **{meal['raw_rice']} kg** ／ 水: **{meal['water']} L**")
 
@@ -163,7 +171,7 @@ def page_settings():
         "生米kg × この倍率 = 水L（計算画面で毎回変更可）",
         min_value=0.0,
         value=float(settings["water_multiplier_default"]),
-        step=0.1,
+        step=0.05,
     )
 
     if st.button("設定を保存", type="primary"):
