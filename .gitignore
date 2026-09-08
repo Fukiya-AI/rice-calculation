@@ -10,11 +10,18 @@ secrets.toml
 # 「!ファイル名」で個別に許可すること）
 *.xlsx
 *.xls
+*.xlsb
 *.csv
 *.numbers
+*.jpg
+*.jpeg
+*.png
 !サンプル*.xlsx
 !サンプル*.xls
 !サンプル*.csv
+
+# 業務データ（園児数・教員数など）を含むテストデータフォルダ
+テストデータ/
 
 # Python自動生成ファイル
 __pycache__/
